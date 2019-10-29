@@ -39,29 +39,36 @@ router.post('/:id/comments', (req, res) => {
       .json({ errorMessage: 'Please provide text for the comment.' });
   }
   Posts.findById(id)
-    .then(x => {
-      Posts.insertComment(comment)
-        .then(comments => {
-          Posts.findCommentById(comments.id)
-            .then(fullComment => {
-              res.status(201).json(fullComment);
-            })
-            .catch(y => {
-              res.status(500).json({
-                error: 'There was an error while retrieving the comment'
+    .then(post => {
+      if (post == false) {
+        res
+          .status(404)
+          .json({ message: 'The post with the specified ID does not exist.' });
+      } else {
+        Posts.insertComment(comment)
+          .then(comments => {
+            Posts.findCommentById(comments.id)
+              .then(fullComment => {
+                res.status(201).json(fullComment);
+              })
+              .catch(y => {
+                res.status(500).json({
+                  error: 'There was an error while retrieving the comment'
+                });
               });
+          })
+          .catch(err => {
+            res.status(500).json({
+              error:
+                'There was an error while saving the comment to the database'
             });
-        })
-        .catch(err => {
-          res.status(500).json({
-            error: 'There was an error while saving the comment to the database'
           });
-        });
+      }
     })
     .catch(error => {
       res
-        .status(404)
-        .json({ message: 'The post with the specified ID does not exist.' });
+        .status(500)
+        .json({ message: 'There was an error accessing the database' });
     });
 });
 
@@ -156,11 +163,9 @@ router.put('/:id', (req, res) => {
   const info = req.body;
 
   if (!info.title || !info.contents) {
-    res
-      .status(400)
-      .json({
-        errorMessage: 'Please provide title and contents for the post.'
-      });
+    res.status(400).json({
+      errorMessage: 'Please provide title and contents for the post.'
+    });
   }
 
   Posts.findById(id)
